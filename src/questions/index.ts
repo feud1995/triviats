@@ -21,19 +21,19 @@ export async function Index(context: Koa.Context) {
 
 export async function Get(context: Koa.Context) {
   var { id } = context.params;
-  var result = (await connection.query(`SELECT questions.id, questions.text, COUNT(answers.id) AS 'answerCount'
+  var question = (await connection.query(`SELECT questions.id, questions.text, COUNT(answers.id) AS 'answerCount'
     FROM questions 
       INNER JOIN answers ON questions.id = answers.question_id
     WHERE questions.id = ?
     GROUP BY answers.question_id, questions.id, questions.text;`, [id]))[0]
   
-  if (!result) { 
+  if (!question) { 
     context.status = 404; 
     context.body = ""; 
     return; 
   }
 
-  var resource = new QuestionResourceModel(result.id, result.text, result.answerCount);
+  var resource = new QuestionResourceModel(question.id, question.text, question.answerCount);
 
   context.body = new SuccessEnvelope(resource);
 };
