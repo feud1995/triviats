@@ -21,7 +21,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "development": "nodemon --watch src -e ts,tsx --exec 'ts-node -r dotenv/config ./src/main.ts'"
+    "development": "nodemon --watch src -e ts,tsx --exec 'ts-node -r dotenv/config ./src/main.ts'",
+    "build": "tsc && cp package* ./dist && cd ./dist && npm i --production"
   },
   "author": "",
   "license": "ISC"
