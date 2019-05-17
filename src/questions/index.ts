@@ -3,29 +3,32 @@ import connection from "../database/connection";
 import SuccessEnvelope from "../common/successEnvelope";
 import QuestionResourceModel from "./QuestionResourceModel";
 
+import Question from "./question";
+import Questions from "./questions";
+
 export async function Index(context: Koa.Context) {
-  console.log(context.query);
   let { page, pageSize } = context.query;
   if (!page || page < 1) page = 1;
   if (!pageSize || pageSize < 1 || pageSize > 100) pageSize = 100;
 
-  let results = await connection.query(`SELECT questions.id, questions.text, COUNT(answers.id) AS 'answerCount'
-  FROM questions
-    INNER JOIN answers ON questions.id = answers.question_id
-  GROUP BY answers.question_id, questions.id, questions.text
-  LIMIT ${(page - 1) * pageSize},${pageSize};`);
-  let resources = results.map((result: any) => new QuestionResourceModel(result.id, result.text, result.answerCount));
+  let offset = (page - 1) * pageSize;
 
-  context.body = new SuccessEnvelope(resources);
+  var questions = await Questions.findQuestions(offset, pageSize);
+  
+  var data = {
+    meta: {
+      page: page,
+      pageSize: pageSize
+    },
+    results: questions
+  };
+  context.body = new SuccessEnvelope(data);
 };
 
 export async function Get(context: Koa.Context) {
   var { id } = context.params;
-  var question = (await connection.query(`SELECT questions.id, questions.text, COUNT(answers.id) AS 'answerCount'
-    FROM questions 
-      INNER JOIN answers ON questions.id = answers.question_id
-    WHERE questions.id = ?
-    GROUP BY answers.question_id, questions.id, questions.text;`, [id]))[0]
+  var question = await Questions.findQuestionById(id);
+  var answers = await Questions.findAnswers(question.id);
   
   if (!question) { 
     context.status = 404; 
@@ -33,7 +36,16 @@ export async function Get(context: Koa.Context) {
     return; 
   }
 
-  var resource = new QuestionResourceModel(question.id, question.text, question.answerCount);
+  var resource = new QuestionResourceModel(question.id, question.text, answers.length);
 
   context.body = new SuccessEnvelope(resource);
 };
+
+export async function Random(context: Koa.Context) {
+  let questionCount = await Questions.getCount();
+  let random = (min: number, max: number) => Math.floor(Math.random() * max) + min;
+  let questionId = random(1, questionCount);
+
+  let question = await Questions.findQuestionById(questionId);
+  context.body = new SuccessEnvelope(question);
+}
