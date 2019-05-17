@@ -14,6 +14,7 @@ const router = new Router({ prefix: '/v1'});
 app.use(bodyParser());
 
 router.get("/questions", questions.Index);
+router.get("/questions/random", questions.Random);
 router.get("/questions/:id", questions.Get);
 
 router.get('/questions/:questionId/answers', answers.Get);
